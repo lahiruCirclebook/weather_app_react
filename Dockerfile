@@ -1,39 +1,35 @@
-# Use the official Node.js image as the base image
-FROM node:14 AS build
+# Use Node.js 16 as the base image
+FROM node:16 AS build
 
-# Set the working directory
+# Set the working directory inside the container
 WORKDIR /app
 
-# Copy the package.json and package-lock.json files to the working directory
+# Copy the package.json and package-lock.json files to install dependencies
 COPY package*.json ./
 
-# Install the project dependencies
+# Install project dependencies
 RUN npm install
 
-# Copy the rest of the application code to the working directory
+# Copy the rest of the application code
 COPY . .
 
-
-
-#build the react app
+# Run build
 RUN npm run build
 
-#use a lightweight node.js runtime for serving the app
-FROM node:14-slim
+# Debugging step: List the contents of the directory
+RUN ls -al /app
 
-# Set the working directory
+# Use a smaller Node.js image for running the app
+FROM node:16-slim
+
+# Set the working directory inside the container
 WORKDIR /app
 
-#copy only the built files form the previous stage
+# Copy the build folder from the previous stage
 COPY --from=build /app/build /app
-
-#install server globally to serve the application
-RUN npm install -g serve
-
-
 
 # Expose the port on which the app will run
 EXPOSE 3000
 
-# Define the command to run the application
-CMD ["serve", "-s", "/app", "-p", "3000"]
+# Define the command to serve the built application
+CMD ["serve", "-s", ".", "-l", "3000"]
